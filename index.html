@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EquiGroup - Video Pitch</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Montserrat:wght@200;300;400;600&display=swap');
+        
+        body, html {
+            margin: 0; padding: 0;
+            background-color: #000;
+            color: #fff;
+            font-family: 'Montserrat', sans-serif;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        .cinzel { font-family: 'Cinzel', serif; }
+
+        /* Video Layer - Fest im Hintergrund */
+        #bg-video {
+            position: fixed;
+            top: 50%; left: 50%;
+            min-width: 100%; min-height: 100%;
+            width: auto; height: auto;
+            transform: translate(-50%, -50%);
+            z-index: 0; 
+            object-fit: cover;
+            opacity: 0.9;
+            background: #000;
+        }
+
+        /* Container fuer alle UI Elemente */
+        #stage {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Optimierter Verlauf: Unten dunkel fuer Lesbarkeit, nach oben hin transparent */
+        .bottom-gradient {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 70%; 
+            background: linear-gradient(to top, 
+                rgba(0,0,0,1) 0%, 
+                rgba(0,0,0,0.85) 25%, 
+                rgba(0,0,0,0.4) 55%, 
+                transparent 100%);
+            z-index: 11;
+            pointer-events: none;
+        }
+
+        .text-container {
+            position: absolute;
+            bottom: 15%; 
+            width: 90%;
+            text-align: center;
+            z-index: 20;
+        }
+        .subtitle {
+            font-size: 2.5rem;
+            font-weight: 300;
+            text-shadow: 0 4px 30px rgba(0,0,0,1);
+            line-height: 1.4;
+            color: #f0f0f0;
+        }
+        .highlight { color: #eecda3; font-weight: 600; text-shadow: 0 0 25px rgba(238, 205, 163, 0.5); }
+
+        /* Overlays */
+        #start-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #050505; 
+            z-index: 1000; 
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            transition: opacity 0.8s;
+        }
+        
+        #end-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 100;
+            display: none; 
+            flex-direction: column;
+            align-items: center; justify-content: center;
+            opacity: 0;
+            transition: opacity 2.5s ease-in;
+        }
+
+        .btn-start {
+            border: 2px solid #eecda3; color: #eecda3;
+            padding: 18px 60px; font-size: 1.4rem; text-transform: uppercase;
+            letter-spacing: 4px; margin-top: 40px; cursor: pointer;
+            transition: all 0.3s; background: rgba(238, 205, 163, 0.05);
+            position: relative;
+            z-index: 1100;
+        }
+        .btn-start:hover { 
+            background: #eecda3; 
+            color: #000; 
+            box-shadow: 0 0 40px rgba(238, 205, 163, 0.4);
+            transform: scale(1.05);
+        }
+
+        #replay-btn {
+            margin-top: 40px;
+            color: #666; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px;
+            cursor: pointer; transition: color 0.3s;
+        }
+        #replay-btn:hover { color: #eecda3; }
+
+        @media (max-width: 768px) {
+            .subtitle { font-size: 1.5rem; }
+            .btn-start { padding: 12px 30px; font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- VIDEO HINTERGRUND -->
+    <video id="bg-video" loop muted playsinline preload="auto">
+        <!-- Lokale Datei -->
+        <source src="video.mp4" type="video/mp4">
+        <!-- Online-Fallback -->
+        <source src="https://assets.mixkit.co/videos/preview/mixkit-horse-running-in-the-wild-1522-large.mp4" type="video/mp4">
+    </video>
+
+    <!-- AUDIO -->
+    <audio id="music" loop preload="auto">
+        <source src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=inspiring-cinematic-ambient-116199.mp3" type="audio/mpeg">
+    </audio>
+
+    <div id="stage">
+        <div class="bottom-gradient"></div>
+
+        <div class="text-container">
+            <div id="caption" class="subtitle"></div>
+        </div>
+
+        <div id="start-screen">
+            <h1 class="cinzel text-4xl md:text-6xl mb-4 tracking-[0.3em] md:tracking-[0.5em] text-[#eecda3]">EQUIGROUP</h1>
+            <p class="text-gray-400 tracking-widest uppercase text-xs md:text-sm">Leidenschaft. Vision. Expertise.</p>
+            
+            <button class="btn-start" onclick="startPresentation()">STARTEN</button>
+            
+            <p class="mt-8 text-xs text-gray-600 animate__animated animate__pulse animate__infinite">Bitte klicke auf STARTEN um die Praesentation zu beginnen</p>
+        </div>
+
+        <div id="end-screen">
+            <h1 class="cinzel text-4xl md:text-5xl mb-4 tracking-[0.3em] md:tracking-[0.4em] text-[#eecda3] animate__animated animate__fadeIn">EQUIGROUP</h1>
+            <p class="text-white tracking-[0.2em] md:tracking-[0.3em] uppercase text-lg md:text-xl font-light animate__animated animate__fadeIn animate__delay-1s">Wir setzen neue Maßstäbe</p>
+            <div id="replay-btn" onclick="location.reload()" class="animate__animated animate__fadeIn animate__delay-3s">Video wiederholen ↻</div>
+        </div>
+    </div>
+
+    <script>
+        const timeline = [
+            { text: "", duration: 4000 }, 
+            { text: "Das Tierwohl muss an oberster Stelle stehen. Nicht als Versprechen, sondern als Fundament.", duration: 7000 },
+            { text: "Wir haben es uns zur Aufgabe gemacht, gemeinschaftlich dem Wohl der Pferde die <span class='highlight'>oberste Priorität</span> zu widmen.", duration: 8000 },
+            { text: "Die Frage kann also heute nicht mehr sein ob, sondern die einzige Frage muss sein: <span class='highlight'>Wann</span> es sich ändert.", duration: 9000 },
+            { text: "Es ist Zeit für ein neues Miteinander, um unseren Sport gemeinsam wieder auf <span class='highlight'>gesunde Füße</span> zu stellen.", duration: 8000 },
+            { text: "<span class='cinzel text-3xl md:text-4xl block mb-6 text-[#eecda3] tracking-widest'>EQUIGROUP</span>Gemeinsam geben wir den Pferden eine Stimme.", duration: 12000 }
+        ];
+
+        let step = 0;
+        let isEnding = false;
+        const video = document.getElementById('bg-video');
+        const music = document.getElementById('music');
+        const caption = document.getElementById('caption');
+        const endScreen = document.getElementById('end-screen');
+        const startScreen = document.getElementById('start-screen');
+
+        function startPresentation() {
+            startScreen.style.opacity = 0;
+            setTimeout(() => startScreen.style.display = 'none', 800);
+
+            music.volume = 0.4; 
+            
+            video.load();
+            video.play().catch(error => {
+                console.warn("Video konnte nicht gestartet werden.");
+            });
+            
+            music.play().catch(e => console.log("Musik Fehler")); 
+
+            nextText();
+        }
+
+        function nextText() {
+            if (step === timeline.length - 1 && !isEnding) {
+                isEnding = true;
+                setTimeout(fadeOutAudio, 8000); 
+            }
+
+            if (step >= timeline.length) {
+                finishPresentation();
+                return;
+            }
+
+            const item = timeline[step];
+
+            if (step > 0) {
+                caption.classList.remove('animate__animated', 'animate__fadeInUp');
+                caption.style.opacity = 0;
+            }
+
+            setTimeout(() => {
+                if (item.text !== "") {
+                    caption.innerHTML = item.text;
+                    caption.classList.add('animate__animated', 'animate__fadeInUp');
+                    caption.style.opacity = 1;
+                }
+            }, 500);
+
+            step++;
+            setTimeout(nextText, item.duration);
+        }
+
+        function finishPresentation() {
+            caption.style.opacity = 0;
+            video.pause();
+            
+            endScreen.style.display = 'flex';
+            setTimeout(() => {
+                endScreen.style.opacity = 1;
+            }, 100);
+        }
+
+        function fadeOutAudio() {
+            const fadeInterval = setInterval(() => {
+                let volMusic = music.volume;
+                if (volMusic > 0.01) {
+                    music.volume = Math.max(0, volMusic - 0.01);
+                } else {
+                    clearInterval(fadeInterval);
+                    music.pause();
+                }
+            }, 200);
+        }
+    </script>
+</body>
+</html>
