@@ -32,7 +32,7 @@
             object-fit: cover;
             opacity: 0.9;
             background: #000;
-            transition: opacity 2s ease; /* Weiches Ausfaden des Videos */
+            transition: opacity 3s ease; /* Weiches Auslaufen des Videos waehrend der vorletzten Folie */
         }
 
         #stage {
@@ -46,7 +46,7 @@
             justify-content: center;
         }
 
-        /* Verlauf fuer Lesbarkeit */
+        /* Verlauf fuer Lesbarkeit der Timeline-Texte */
         .bottom-gradient {
             position: absolute;
             bottom: 0;
@@ -61,6 +61,7 @@
                 transparent 100%);
             z-index: 11;
             pointer-events: none;
+            transition: opacity 1s ease;
         }
 
         .text-container {
@@ -90,7 +91,7 @@
         
         #end-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000;
+            background: #000; /* Rein schwarzer Hintergrund fuer das Finale */
             z-index: 100;
             display: none; 
             flex-direction: column;
@@ -113,13 +114,6 @@
             transform: scale(1.05);
         }
 
-        #replay-btn {
-            margin-top: 40px;
-            color: #666; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px;
-            cursor: pointer; transition: color 0.3s;
-        }
-        #replay-btn:hover { color: #eecda3; }
-
         @media (max-width: 768px) {
             .subtitle { font-size: 1.5rem; }
             .btn-start { padding: 12px 30px; font-size: 1rem; }
@@ -139,11 +133,12 @@
     </audio>
 
     <div id="stage">
-        <div class="bottom-gradient"></div>
+        <div id="bottom-overlay" class="bottom-gradient"></div>
         <div class="text-container">
             <div id="caption" class="subtitle"></div>
         </div>
 
+        <!-- START-OBERFLÄCHE -->
         <div id="start-screen">
             <h1 class="cinzel text-4xl md:text-6xl mb-4 tracking-[0.3em] md:tracking-[0.5em] text-[#eecda3]">EQUIGROUP</h1>
             <p class="text-gray-400 tracking-widest uppercase text-xs md:text-sm">Leidenschaft. Vision. Expertise.</p>
@@ -151,10 +146,10 @@
             <p class="mt-8 text-xs text-gray-600 animate__animated animate__pulse animate__infinite">Bitte klicke auf STARTEN um die Präsentation zu beginnen</p>
         </div>
 
+        <!-- FINALE FOLIE -->
         <div id="end-screen">
             <h1 class="cinzel text-4xl md:text-5xl mb-4 tracking-[0.3em] md:tracking-[0.4em] text-[#eecda3] animate__animated animate__fadeIn">EQUIGROUP</h1>
             <p class="text-white tracking-[0.2em] md:tracking-[0.3em] uppercase text-lg md:text-xl font-light animate__animated animate__fadeIn animate__delay-1s">Wir setzen neue Maßstäbe</p>
-            <div id="replay-btn" onclick="location.reload()" class="animate__animated animate__fadeIn animate__delay-3s">Video wiederholen ↻</div>
         </div>
     </div>
 
@@ -175,9 +170,10 @@
         const caption = document.getElementById('caption');
         const endScreen = document.getElementById('end-screen');
         const startScreen = document.getElementById('start-screen');
+        const bottomOverlay = document.getElementById('bottom-overlay');
 
         function startPresentation() {
-            // Reset aller Zustaende
+            // Reset aller Parameter fuer den sauberen Neustart
             step = 0;
             isEnding = false;
             music.volume = 0.4;
@@ -185,6 +181,7 @@
             video.style.opacity = 0.9;
             video.loop = true;
             music.loop = true;
+            bottomOverlay.style.opacity = 1;
 
             startScreen.style.opacity = 0;
             setTimeout(() => {
@@ -197,6 +194,17 @@
         }
 
         function nextText() {
+            // Spezial-Logik fuer die letzte Timeline-Folie
+            if (step === timeline.length - 1 && !isEnding) {
+                isEnding = true;
+                
+                // Video beginnt nach 8 Sekunden der 12s-Folie weich auszulaufen
+                // Damit ist es schwarz, wenn die Folie bei 12s endet.
+                setTimeout(() => {
+                    video.style.opacity = 0;
+                }, 8000); 
+            }
+
             if (step >= timeline.length) {
                 initFinalSequence();
                 return;
@@ -204,7 +212,7 @@
 
             const item = timeline[step];
             
-            // Text-Fade Logik
+            // Text-Fade
             if (step > 0) {
                 caption.classList.remove('animate__animated', 'animate__fadeInUp');
                 caption.style.opacity = 0;
@@ -222,31 +230,28 @@
             setTimeout(nextText, item.duration);
         }
 
-        // Neue Sequenz-Logik
         function initFinalSequence() {
-            // 1. Letzten Timeline-Text ausblenden
+            // 1. Letzten Timeline-Text und Gradient ausblenden
             caption.style.opacity = 0;
+            bottomOverlay.style.opacity = 0;
 
-            // 2. Video weich ausblenden (dauert 2s durch CSS transition)
-            video.style.opacity = 0;
-
-            // 3. Nach dem Video-Fade den End-Screen zeigen
+            // 2. Video pausieren (es ist bereits schwarz durch transition)
             setTimeout(() => {
-                // Video pausieren (es ist bereits unsichtbar)
                 video.pause();
                 
-                // End-Screen einblenden
+                // Finalen Screen anzeigen
                 endScreen.style.display = 'flex';
+                
                 setTimeout(() => {
                     endScreen.style.opacity = 1;
                     
-                    // 4. Musik waehrend der 5 Sekunden Ausblenden
-                    fadeOutMusic(5000);
+                    // 3. Musik während der Anzeige ausblenden (4 Sekunden Fade)
+                    fadeOutMusic(4000);
                     
-                    // 5. Nach 5 Sekunden zum Start zurueckkehren
+                    // 4. Nach 5 Sekunden (1s Stille am Ende) zum Start zurueckkehren
                     setTimeout(autoResetToStart, 5000);
                 }, 100);
-            }, 2000); 
+            }, 500); 
         }
 
         function autoResetToStart() {
@@ -260,20 +265,21 @@
                 music.pause();
                 music.currentTime = 0;
                 music.loop = false;
+                video.pause();
                 video.currentTime = 0;
                 video.loop = false;
                 
-                // Start-Screen wieder zeigen
+                // Start-Screen wieder einblenden
                 startScreen.style.display = 'flex';
                 setTimeout(() => {
                     startScreen.style.opacity = 1;
                 }, 100);
-            }, 1500);
+            }, 1000);
         }
 
         function fadeOutMusic(durationMs) {
             const startVolume = music.volume;
-            const steps = 20;
+            const steps = 40; 
             const intervalTime = durationMs / steps;
             const volStep = startVolume / steps;
 
