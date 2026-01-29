@@ -46,7 +46,7 @@
             justify-content: center;
         }
 
-        /* Optimierter Verlauf: Unten dunkel fuer Lesbarkeit, nach oben hin transparent auslaufend */
+        /* Verlauf: Unten dunkel fuer Lesbarkeit, nach oben hin transparent auslaufend */
         .bottom-gradient {
             position: absolute;
             bottom: 0;
@@ -132,9 +132,8 @@
 
     <!-- VIDEO HINTERGRUND -->
     <video id="bg-video" loop muted playsinline preload="auto">
-        <!-- Lokale Datei -->
         <source src="video.mp4" type="video/mp4">
-        <!-- Online-Fallback -->
+        <!-- Online-Fallback fuer Vorschau -->
         <source src="https://assets.mixkit.co/videos/preview/mixkit-horse-running-in-the-wild-1522-large.mp4" type="video/mp4">
     </video>
 
@@ -192,18 +191,20 @@
             
             video.load();
             video.play().catch(error => {
-                console.warn("Video konnte nicht gestartet werden.");
+                console.warn("Video Startfehler");
             });
             
-            music.play().catch(e => console.log("Musik Fehler")); 
+            music.play().catch(e => console.log("Musik Startfehler")); 
 
             nextText();
         }
 
         function nextText() {
+            // Fade out Logik vorbereiten
             if (step === timeline.length - 1 && !isEnding) {
                 isEnding = true;
-                setTimeout(fadeOutAudio, 8000); 
+                // Starte das Ausfaden etwas frueher, damit es zum Ende hin leise ist
+                setTimeout(fadeOutAudio, 7000); 
             }
 
             if (step >= timeline.length) {
@@ -234,6 +235,10 @@
             caption.style.opacity = 0;
             video.pause();
             
+            // Sicherheit fuer Mobile: Musik sofort hart stoppen, falls Fade-Out hing
+            music.pause();
+            music.volume = 0;
+            
             endScreen.style.display = 'flex';
             setTimeout(() => {
                 endScreen.style.opacity = 1;
@@ -243,13 +248,15 @@
         function fadeOutAudio() {
             const fadeInterval = setInterval(() => {
                 let volMusic = music.volume;
-                if (volMusic > 0.01) {
-                    music.volume = Math.max(0, volMusic - 0.01);
+                // Groessere Schritte fuer Mobile (0.02 statt 0.01) um Timer-Drosselung zu umgehen
+                if (volMusic > 0.02) {
+                    music.volume = Math.max(0, volMusic - 0.02);
                 } else {
                     clearInterval(fadeInterval);
                     music.pause();
+                    music.volume = 0;
                 }
-            }, 200);
+            }, 150);
         }
     </script>
 </body>
