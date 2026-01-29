@@ -32,6 +32,7 @@
             object-fit: cover;
             opacity: 0.9;
             background: #000;
+            transition: opacity 2s ease; /* Weiches Ausfaden des Videos */
         }
 
         #stage {
@@ -45,6 +46,7 @@
             justify-content: center;
         }
 
+        /* Verlauf fuer Lesbarkeit */
         .bottom-gradient {
             position: absolute;
             bottom: 0;
@@ -83,18 +85,18 @@
             z-index: 1000; 
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            transition: opacity 0.8s;
+            transition: opacity 1s ease;
         }
         
         #end-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95);
+            background: #000;
             z-index: 100;
             display: none; 
             flex-direction: column;
             align-items: center; justify-content: center;
             opacity: 0;
-            transition: opacity 2.5s ease-in;
+            transition: opacity 1.5s ease;
         }
 
         .btn-start {
@@ -128,6 +130,7 @@
 
     <video id="bg-video" loop muted playsinline preload="auto">
         <source src="video.mp4" type="video/mp4">
+        <!-- Online-Fallback fuer Vorschau -->
         <source src="https://assets.mixkit.co/videos/preview/mixkit-horse-running-in-the-wild-1522-large.mp4" type="video/mp4">
     </video>
 
@@ -174,30 +177,34 @@
         const startScreen = document.getElementById('start-screen');
 
         function startPresentation() {
+            // Reset aller Zustaende
+            step = 0;
+            isEnding = false;
+            music.volume = 0.4;
+            video.currentTime = 0;
+            video.style.opacity = 0.9;
+            video.loop = true;
+            music.loop = true;
+
             startScreen.style.opacity = 0;
-            setTimeout(() => startScreen.style.display = 'none', 800);
-            music.volume = 0.4; 
-            video.load();
-            video.play().catch(() => console.log("Video Play Error"));
-            music.play().catch(() => console.log("Music Play Error")); 
-            nextText();
+            setTimeout(() => {
+                startScreen.style.display = 'none';
+                video.load();
+                video.play().catch(() => console.log("Video Play Error"));
+                music.play().catch(() => console.log("Music Play Error")); 
+                nextText();
+            }, 1000);
         }
 
         function nextText() {
-            // Spezial-Logik fuer Mobile: 8 Sekunden vor Schluss den Loop entfernen
-            if (step === timeline.length - 1 && !isEnding) {
-                isEnding = true;
-                video.loop = false; // Video wird am Ende stoppen
-                music.loop = false; // Musik wird am Ende stoppen
-                setTimeout(fadeOutAudio, 7000); 
-            }
-
             if (step >= timeline.length) {
-                finishPresentation();
+                initFinalSequence();
                 return;
             }
 
             const item = timeline[step];
+            
+            // Text-Fade Logik
             if (step > 0) {
                 caption.classList.remove('animate__animated', 'animate__fadeInUp');
                 caption.style.opacity = 0;
@@ -215,30 +222,72 @@
             setTimeout(nextText, item.duration);
         }
 
-        function finishPresentation() {
+        // Neue Sequenz-Logik
+        function initFinalSequence() {
+            // 1. Letzten Timeline-Text ausblenden
             caption.style.opacity = 0;
-            video.pause();
-            music.pause();
-            music.volume = 0;
-            
-            endScreen.style.display = 'flex';
+
+            // 2. Video weich ausblenden (dauert 2s durch CSS transition)
+            video.style.opacity = 0;
+
+            // 3. Nach dem Video-Fade den End-Screen zeigen
             setTimeout(() => {
-                endScreen.style.opacity = 1;
-            }, 100);
+                // Video pausieren (es ist bereits unsichtbar)
+                video.pause();
+                
+                // End-Screen einblenden
+                endScreen.style.display = 'flex';
+                setTimeout(() => {
+                    endScreen.style.opacity = 1;
+                    
+                    // 4. Musik waehrend der 5 Sekunden Ausblenden
+                    fadeOutMusic(5000);
+                    
+                    // 5. Nach 5 Sekunden zum Start zurueckkehren
+                    setTimeout(autoResetToStart, 5000);
+                }, 100);
+            }, 2000); 
         }
 
-        function fadeOutAudio() {
+        function autoResetToStart() {
+            // End-Screen ausblenden
+            endScreen.style.opacity = 0;
+            
+            setTimeout(() => {
+                endScreen.style.display = 'none';
+                
+                // Alles stoppen & zuruecksetzen
+                music.pause();
+                music.currentTime = 0;
+                music.loop = false;
+                video.currentTime = 0;
+                video.loop = false;
+                
+                // Start-Screen wieder zeigen
+                startScreen.style.display = 'flex';
+                setTimeout(() => {
+                    startScreen.style.opacity = 1;
+                }, 100);
+            }, 1500);
+        }
+
+        function fadeOutMusic(durationMs) {
+            const startVolume = music.volume;
+            const steps = 20;
+            const intervalTime = durationMs / steps;
+            const volStep = startVolume / steps;
+
+            let currentStep = 0;
             const fadeInterval = setInterval(() => {
-                let volMusic = music.volume;
-                // Aggressiveres Fade-Out fuer Mobile
-                if (volMusic > 0.05) {
-                    music.volume = Math.max(0, volMusic - 0.05);
-                } else {
+                currentStep++;
+                if (currentStep >= steps) {
+                    music.volume = 0;
                     clearInterval(fadeInterval);
                     music.pause();
-                    music.volume = 0;
+                } else {
+                    music.volume = Math.max(0, startVolume - (volStep * currentStep));
                 }
-            }, 100);
+            }, intervalTime);
         }
     </script>
 </body>
