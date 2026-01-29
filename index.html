@@ -21,7 +21,7 @@
 
         .cinzel { font-family: 'Cinzel', serif; }
 
-        /* Video Layer - Fest im Hintergrund */
+        /* Video Hintergrund */
         #bg-video {
             position: fixed;
             top: 50%; left: 50%;
@@ -34,7 +34,6 @@
             background: #000;
         }
 
-        /* Container fuer alle UI Elemente */
         #stage {
             position: relative;
             width: 100%;
@@ -46,7 +45,6 @@
             justify-content: center;
         }
 
-        /* Verlauf: Unten dunkel fuer Lesbarkeit, nach oben hin transparent auslaufend */
         .bottom-gradient {
             position: absolute;
             bottom: 0;
@@ -79,7 +77,6 @@
         }
         .highlight { color: #eecda3; font-weight: 600; text-shadow: 0 0 25px rgba(238, 205, 163, 0.5); }
 
-        /* Overlays */
         #start-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: #050505; 
@@ -109,8 +106,7 @@
             z-index: 1100;
         }
         .btn-start:hover { 
-            background: #eecda3; 
-            color: #000; 
+            background: #eecda3; color: #000; 
             box-shadow: 0 0 40px rgba(238, 205, 163, 0.4);
             transform: scale(1.05);
         }
@@ -130,21 +126,17 @@
 </head>
 <body>
 
-    <!-- VIDEO HINTERGRUND -->
     <video id="bg-video" loop muted playsinline preload="auto">
         <source src="video.mp4" type="video/mp4">
-        <!-- Online-Fallback fuer Vorschau -->
         <source src="https://assets.mixkit.co/videos/preview/mixkit-horse-running-in-the-wild-1522-large.mp4" type="video/mp4">
     </video>
 
-    <!-- AUDIO -->
     <audio id="music" loop preload="auto">
         <source src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=inspiring-cinematic-ambient-116199.mp3" type="audio/mpeg">
     </audio>
 
     <div id="stage">
         <div class="bottom-gradient"></div>
-
         <div class="text-container">
             <div id="caption" class="subtitle"></div>
         </div>
@@ -152,10 +144,8 @@
         <div id="start-screen">
             <h1 class="cinzel text-4xl md:text-6xl mb-4 tracking-[0.3em] md:tracking-[0.5em] text-[#eecda3]">EQUIGROUP</h1>
             <p class="text-gray-400 tracking-widest uppercase text-xs md:text-sm">Leidenschaft. Vision. Expertise.</p>
-            
             <button class="btn-start" onclick="startPresentation()">STARTEN</button>
-            
-            <p class="mt-8 text-xs text-gray-600 animate__animated animate__pulse animate__infinite">Bitte klicke auf STARTEN um die Praesentation zu beginnen</p>
+            <p class="mt-8 text-xs text-gray-600 animate__animated animate__pulse animate__infinite">Bitte klicke auf STARTEN um die Präsentation zu beginnen</p>
         </div>
 
         <div id="end-screen">
@@ -186,24 +176,19 @@
         function startPresentation() {
             startScreen.style.opacity = 0;
             setTimeout(() => startScreen.style.display = 'none', 800);
-
             music.volume = 0.4; 
-            
             video.load();
-            video.play().catch(error => {
-                console.warn("Video Startfehler");
-            });
-            
-            music.play().catch(e => console.log("Musik Startfehler")); 
-
+            video.play().catch(() => console.log("Video Play Error"));
+            music.play().catch(() => console.log("Music Play Error")); 
             nextText();
         }
 
         function nextText() {
-            // Fade out Logik vorbereiten
+            // Spezial-Logik fuer Mobile: 8 Sekunden vor Schluss den Loop entfernen
             if (step === timeline.length - 1 && !isEnding) {
                 isEnding = true;
-                // Starte das Ausfaden etwas frueher, damit es zum Ende hin leise ist
+                video.loop = false; // Video wird am Ende stoppen
+                music.loop = false; // Musik wird am Ende stoppen
                 setTimeout(fadeOutAudio, 7000); 
             }
 
@@ -213,7 +198,6 @@
             }
 
             const item = timeline[step];
-
             if (step > 0) {
                 caption.classList.remove('animate__animated', 'animate__fadeInUp');
                 caption.style.opacity = 0;
@@ -234,8 +218,6 @@
         function finishPresentation() {
             caption.style.opacity = 0;
             video.pause();
-            
-            // Sicherheit fuer Mobile: Musik sofort hart stoppen, falls Fade-Out hing
             music.pause();
             music.volume = 0;
             
@@ -248,15 +230,15 @@
         function fadeOutAudio() {
             const fadeInterval = setInterval(() => {
                 let volMusic = music.volume;
-                // Groessere Schritte fuer Mobile (0.02 statt 0.01) um Timer-Drosselung zu umgehen
-                if (volMusic > 0.02) {
-                    music.volume = Math.max(0, volMusic - 0.02);
+                // Aggressiveres Fade-Out fuer Mobile
+                if (volMusic > 0.05) {
+                    music.volume = Math.max(0, volMusic - 0.05);
                 } else {
                     clearInterval(fadeInterval);
                     music.pause();
                     music.volume = 0;
                 }
-            }, 150);
+            }, 100);
         }
     </script>
 </body>
